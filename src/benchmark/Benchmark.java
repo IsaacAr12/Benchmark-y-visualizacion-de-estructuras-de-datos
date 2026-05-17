@@ -57,6 +57,7 @@ public class Benchmark {
             // Iteraciones medidas
             long totalInsertTime = 0, totalSearchTime = 0, totalDeleteTime = 0;
             long totalInsertComp = 0, totalSearchComp = 0, totalDeleteComp = 0;
+            long lastHeight = 0, lastSize = 0;
 
             for (int r = 0; r < R; r++) {
                 ds.clear();
@@ -67,6 +68,8 @@ public class Benchmark {
                 totalInsertComp += metrics[3];
                 totalSearchComp += metrics[4];
                 totalDeleteComp += metrics[5];
+                lastHeight = metrics[6];
+                lastSize = metrics[7];
             }
 
             results.add(new ResultRow(
@@ -80,8 +83,8 @@ public class Benchmark {
                 ds.insertComplexity(),
                 ds.searchComplexity(),
                 ds.deleteComplexity(),
-                ds.height(),
-                ds.size()
+                (int) lastHeight,
+                (int) lastSize
             ));
         }
 
@@ -111,6 +114,10 @@ public class Benchmark {
         long t4 = System.nanoTime();
         searchTime = t4 - t3;
 
+        // Capturar altura y tamaño ANTES de borrar
+        long snapHeight = ds.height();
+        long snapSize = ds.size();
+
         // Borrado (excepto Red-Black)
         if (!ds.deleteComplexity().equals("N/A")) {
             long t5 = System.nanoTime();
@@ -123,7 +130,8 @@ public class Benchmark {
         }
 
         return new long[]{insertTime, searchTime, deleteTime,
-                          insertComp, searchComp, deleteComp};
+                          insertComp, searchComp, deleteComp,
+                          snapHeight, snapSize};
     }
 
     /** Exporta resultados a CSV */
