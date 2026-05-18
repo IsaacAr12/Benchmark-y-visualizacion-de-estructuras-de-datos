@@ -1,135 +1,145 @@
-# Benchmark y visualización de estructuras de datos
+ Benchmark y visualización de estructuras de datos
 
-## 1. JDK usado
+1. Descripción general
 
-Este proyecto fue desarrollado en Java y se recomienda ejecutarlo con:
-JDK 17 o superior
+Este proyecto corresponde al trabajo extraclase 2 del curso Algoritmos y Estructuras de Datos I (CE1103).
 
-Se recomienda usar JDK 17 porque es una versión estable y compatible con JavaFX.
+La aplicación permite ejecutar un benchmark para comparar el rendimiento de diferentes estructuras de datos implementadas en Java. El programa mide operaciones de inserción, búsqueda y borrado, mostrando los resultados en una interfaz gráfica con tabla comparativa, gráficos y opción de exportación a CSV.
 
-Para verificar la versión instalada:
+Las estructuras comparadas son:
+
+1. Arreglo
+2. Lista enlazada simple
+3. BST
+4. AVL
+5. Splay
+6. Red-Black
+
+Todas las estructuras reciben la misma secuencia de inserción y el mismo conjunto de búsquedas para que la comparación sea lo más justa posible.
+
+
+2. JDK usado
+
+Este proyecto fue desarrollado en Java. Se recomienda utilizar:
+
+* JDK 17 o superior.
+* JavaFX SDK 21, incluido en la carpeta `lib/javafx-sdk-21`.
+
+Para verificar la versión instalada de Java:
 java -version
 
-Para verificar el compilador:
+Para verificar la versión del compilador:
 javac -version
 
+El proyecto incluye un archivo `run.bat` que permite compilar y ejecutar automáticamente la aplicación en Windows.
 
----
 
-## 2. Interfaz usada
+3. Interfaz usada
 
-La interfaz gráfica del proyecto fue desarrollada usando JavaFX.
+La interfaz gráfica fue desarrollada usando JavaFX.
 
 JavaFX se utiliza para mostrar:
 
 * Campos de entrada para configurar el benchmark.
+* Selector de modo de búsqueda.
+* Área para escribir o pegar búsquedas manuales.
 * Casillas para seleccionar estructuras.
-* Botón para ejecutar las pruebas.
+* Botón para ejecutar el benchmark.
 * Tabla comparativa de resultados.
 * Gráficos de tiempos, comparaciones y altura/tamaño.
-* Visualización de los resultados obtenidos por cada estructura.
+* Botón para exportar resultados a CSV.
 
-La interfaz permite que el usuario ejecute pruebas sin modificar directamente el código fuente.
-
----
-
-## 3. Cómo compilar
-
-Para compilar el proyecto se necesita tener instalado:
-
-* JDK 17 o superior.
-* JavaFX SDK.
-
-Si se compila desde consola en Windows, se puede usar un comando como el siguiente:
-javac --module-path "RUTA_JAVAFX\lib" --add-modules javafx.controls,javafx.fxml -d out src/*.java
+La interfaz permite que el usuario configure y ejecute las pruebas sin modificar directamente el código fuente.
 
 
-Ejemplo:
-javac --module-path "C:\javafx-sdk-17\lib" --add-modules javafx.controls,javafx.fxml -d out src/*.java
+4. Cómo compilar
 
+La forma recomendada de compilar el proyecto en Windows es usando el archivo:
+run.bat
+
+Este archivo realiza los siguientes pasos:
+
+1. Limpia o prepara la carpeta `out`.
+2. Busca todos los archivos `.java` dentro de `src`.
+3. Compila todas las clases del proyecto.
+4. Usa JavaFX desde la ruta `lib\javafx-sdk-21\lib`.
+5. Deja los archivos compilados dentro de la carpeta `out`.
+
+El comando principal de compilación usado por el archivo `run.bat` es similar al siguiente:
+javac --module-path "lib\javafx-sdk-21\lib" --add-modules javafx.controls,javafx.fxml -cp "lib\gson-2.10.1.jar" -sourcepath "src" -d "out" @sources.txt
 
 Donde:
 
-* `--module-path` indica la ruta donde está JavaFX.
-* `--add-modules` indica los módulos de JavaFX que se usarán.
-* `-d out` indica que los archivos compilados se guardarán en la carpeta `out`.
-* `src/*.java` indica que se compilarán los archivos `.java` dentro de la carpeta `src`.
+* `--module-path` indica la ubicación de JavaFX.
+* `--add-modules` indica los módulos de JavaFX usados.
+* `-cp` agrega librerías externas necesarias.
+* `-sourcepath` indica la carpeta del código fuente.
+* `-d out` indica que los archivos compilados se guardan en `out`.
+* `@sources.txt` contiene la lista de archivos `.java` a compilar.
 
-Si el proyecto tiene subcarpetas dentro de `src`, se puede usar:
-javac --module-path "RUTA_JAVAFX\lib" --add-modules javafx.controls,javafx.fxml -d out src//*.java
-
-
----
-
-## 4. Cómo ejecutar
-
-Después de compilar, el proyecto se puede ejecutar con:
-java --module-path "RUTA_JAVAFX\lib" --add-modules javafx.controls,javafx.fxml -cp out Main
+También puede compilarse desde un IDE, siempre que se configure correctamente el JDK y JavaFX.
 
 
-Ejemplo:
-java --module-path "C:\javafx-sdk-17\lib" --add-modules javafx.controls,javafx.fxml -cp out Main
+5. Cómo ejecutar
 
+La forma recomendada de ejecutar el proyecto es abrir el archivo:
+run.bat
 
-Importante:
-Si la clase principal del proyecto no se llama `Main`, se debe cambiar `Main` por el nombre real de la clase principal.
+Este archivo compila el proyecto y luego ejecuta la clase principal:
+ui.BenchmarkApp
 
-Por ejemplo:
-java --module-path "C:\javafx-sdk-17\lib" --add-modules javafx.controls,javafx.fxml -cp out BenchmarkApp
+El comando de ejecución usado es similar al siguiente:
+java --module-path "lib\javafx-sdk-21\lib" --add-modules javafx.controls,javafx.fxml -cp "out;lib\gson-2.10.1.jar" ui.BenchmarkApp
 
-
-También puede ejecutarse desde un IDE como:
+También se puede ejecutar desde un IDE como:
 
 * IntelliJ IDEA
 * Eclipse
 * NetBeans
 * Visual Studio Code
 
-En ese caso se debe configurar JavaFX como librería externa y agregar los módulos necesarios en la configuración de ejecución.
+En ese caso se debe configurar JavaFX y usar como clase principal:
+ui.BenchmarkApp
 
----
 
-## 5. Cómo usar la aplicación
+6. Cómo usar la aplicación
 
 Al abrir la aplicación, el usuario puede configurar los parámetros principales del benchmark.
 
-### Pasos básicos
+Pasos básicos
 
 1. Abrir la aplicación.
 2. Ingresar el valor de `N`.
 3. Ingresar la semilla.
 4. Ingresar el valor de `W`.
 5. Ingresar el valor de `R`.
-6. Seleccionar las estructuras que se desean comparar.
-7. Elegir el modo de búsqueda.
-8. Ejecutar el benchmark.
-9. Revisar la tabla comparativa.
-10. Revisar los gráficos generados.
-11. Exportar los resultados a CSV si se necesita guardar la corrida.
+6. Elegir el modo de búsqueda: automática o manual.
+7. Si el modo es manual, escribir o pegar las claves a buscar.
+8. Seleccionar las estructuras que se desean comparar.
+9. Presionar el botón Ejecutar Benchmark.
+10. Revisar la tabla comparativa.
+11. Revisar los gráficos generados.
+12. Exportar los resultados a CSV si se desea guardar la corrida.
 
----
 
-## 6. Parámetros de entrada
+7. Parámetros de entrada
 
-### N
+N
 
-Representa la cantidad de claves que se insertarán en cada estructura.
+`N` representa la cantidad de claves que se intentarán insertar en cada estructura.
 
 Ejemplo:
 N = 1000
 
+Esto significa que se generarán 1000 claves para insertar en cada estructura seleccionada.
 
-Esto significa que se generarán 1000 claves aleatorias para insertar en cada estructura seleccionada.
 
----
-
-### Semilla
+Semilla
 
 La semilla es un número utilizado para generar la secuencia aleatoria de claves.
 
 Ejemplo:
 Semilla = 42
-
 
 Si se usa la misma semilla y el mismo valor de `N`, el programa genera la misma secuencia de inserción.
 
@@ -139,12 +149,10 @@ Por ejemplo, si se ejecuta el benchmark con:
 N = 1000
 Semilla = 42
 
+las estructuras reciben la misma secuencia de inserción generada a partir de esa semilla.
 
-todas las estructuras reciben exactamente las mismas 1000 claves en el mismo orden.
 
----
-
-### W - Warmup
+W - Warmup
 
 `W` significa warmup o calentamiento.
 
@@ -155,104 +163,102 @@ Estas corridas no se toman en cuenta en la tabla final.
 Su propósito es reducir efectos iniciales de la JVM, como:
 
 * Carga de clases.
-* Optimización del compilador JIT.
 * Inicialización interna del programa.
+* Optimización del compilador JIT.
 
 Ejemplo:
-W = 1
+W = 30
+
+Esto significa que se ejecutarán 30 corridas de calentamiento antes de las corridas medidas.
 
 
-Esto significa que se ejecutará una corrida de calentamiento antes de las corridas medidas.
-
----
-
-### R - Iteraciones medidas
+R - Iteraciones medidas
 
 `R` representa la cantidad de corridas que sí se miden y se promedian.
 
 Ejemplo:
-R = 3
+R = 10
 
-
-Esto significa que el benchmark ejecutará 3 corridas medidas y calculará un promedio de los resultados.
+Esto significa que el benchmark ejecutará 10 corridas medidas y calculará un promedio de los resultados.
 
 El valor de `R` debe ser mayor o igual a 1.
 
----
 
-## 7. Formato de búsquedas manuales o por archivo
+8. Modos de búsqueda
 
-La aplicación permite trabajar con búsquedas generadas automáticamente y también puede aceptar búsquedas manuales o desde archivo, según el modo seleccionado.
+La aplicación permite usar dos modos de búsqueda:
 
-### Búsqueda automática
+1. Búsqueda automática.
+2. Búsqueda manual.
 
-En este modo, el programa genera automáticamente un conjunto de claves de búsqueda usando una regla interna documentada.
-
-Estas búsquedas se aplican por igual a todas las estructuras seleccionadas.
-
-Ejemplo:
-Cantidad de búsquedas = N / 2
+No se incluye carga de archivos para búsquedas. Las claves manuales se escriben o se pegan directamente en el área de texto de la interfaz.
 
 
-Si `N = 1000`, entonces se generan 500 búsquedas.
+Búsqueda automática
 
----
+En este modo, el programa genera automáticamente un conjunto de claves de búsqueda.
 
-### Búsqueda manual
+La cantidad de búsquedas generadas es:
+N / 2
 
-En el modo manual, el usuario puede escribir directamente las claves que desea buscar.
+Por ejemplo, si:
+N = 1000
+
+entonces el programa genera:
+500 búsquedas
+
+Estas búsquedas se generan usando una semilla relacionada con la semilla principal, por lo que el comportamiento es reproducible.
+
+Las mismas búsquedas automáticas se aplican a todas las estructuras seleccionadas.
+
+
+Búsqueda manual
+
+En este modo, el usuario puede escribir o pegar directamente las claves que desea buscar.
 
 Formato aceptado con comas:
 10, 25, 80, 150, 300
 
-
-También puede escribirse una clave por línea:
+También se acepta una clave por línea:
 10
 25
 80
 150
 300
 
+También se aceptan espacios o punto y coma como separadores.
 
-El programa interpreta esos valores como claves enteras que serán buscadas en cada estructura activa.
+Ejemplo con espacios:
+10 25 80 150 300
 
----
+Ejemplo con punto y coma:
+10;25;80;150;300
 
-### Búsqueda por archivo
+El programa interpreta esos valores como números enteros y los usa como consultas de búsqueda para todas las estructuras seleccionadas.
 
-En el modo por archivo, el usuario puede cargar un archivo `.txt` o `.csv` con las claves de búsqueda.
-
-Formato válido en archivo `.txt`:
-10
-25
-80
-150
-300
+Si el usuario elige el modo manual y deja el cuadro vacío, la aplicación muestra un error.
 
 
-Formato válido en archivo `.csv`:
-10,25,80,150,300
+9. Flujo general del benchmark
+
+El benchmark sigue este proceso:
+
+1. Se leen los parámetros ingresados por el usuario.
+2. Se genera la secuencia de inserción usando `N` y la semilla.
+3. Se generan las búsquedas automáticas o se toman las búsquedas manuales ingresadas por el usuario.
+4. Se ejecutan las corridas de calentamiento `W`.
+5. Se ejecutan las corridas medidas `R`.
+6. En cada corrida se insertan los mismos datos en cada estructura activa.
+7. Luego se realizan las mismas búsquedas en cada estructura activa.
+8. Después se ejecuta el borrado en las estructuras que lo permiten.
+9. En Red-Black no se ejecuta borrado medido.
+10. Se promedian los resultados.
+11. Se muestran los resultados en la tabla.
+12. Se generan los gráficos.
+13. Se puede exportar el resultado a CSV.
 
 
-El archivo debe contener únicamente números enteros separados por comas o saltos de línea.
-
-Ejemplo de archivo válido:
-45,90,120,250,600
-
-
-Ejemplo de archivo también válido:
-45
-90
-120
-250
-600
-
-
-Las mismas búsquedas cargadas desde el archivo se aplican a todas las estructuras seleccionadas.
-
----
-
-## 8. Estructuras comparadas
+10. Estructuras comparadas
 
 El benchmark compara seis estructuras de datos:
 
@@ -263,11 +269,10 @@ El benchmark compara seis estructuras de datos:
 5. Splay
 6. Red-Black
 
-Todas las estructuras reciben la misma secuencia de inserción y el mismo conjunto de búsquedas para que la comparación sea justa.
+Todas las estructuras reciben la misma secuencia de inserción y el mismo conjunto de búsquedas para mantener una comparación consistente.
 
----
 
-## 9. Arreglo
+11. Arreglo
 
 El arreglo es una estructura lineal donde los elementos se almacenan de forma contigua.
 
@@ -279,17 +284,16 @@ Operaciones evaluadas:
 
 Complejidades esperadas:
 
-| Operación | Complejidad                              |
-| --------- | ---------------------------------------- |
-| Inserción | O(1) u O(n), dependiendo del crecimiento |
-| Búsqueda  | O(n)                                     |
-| Borrado   | O(n)                                     |
+| Operación | Complejidad     |
+| Inserción | O(1) amortizado |
+| Búsqueda  | O(n)            |
+| Borrado   | O(n)            |
 
----
 
-## 10. Lista enlazada simple
+12. Lista enlazada simple
 
 La lista enlazada simple está formada por nodos.
+
 Cada nodo guarda un valor y una referencia al siguiente nodo.
 
 Operaciones evaluadas:
@@ -301,14 +305,12 @@ Operaciones evaluadas:
 Complejidades esperadas:
 
 | Operación | Complejidad |
-| --------- | ----------- |
 | Inserción | O(n)        |
 | Búsqueda  | O(n)        |
 | Borrado   | O(n)        |
 
----
 
-## 11. BST
+13. BST
 
 El BST, o árbol binario de búsqueda, organiza los datos usando la siguiente regla:
 
@@ -324,16 +326,14 @@ Operaciones evaluadas:
 Complejidades esperadas:
 
 | Operación | Promedio | Peor caso |
-| --------- | -------- | --------- |
 | Inserción | O(log n) | O(n)      |
 | Búsqueda  | O(log n) | O(n)      |
 | Borrado   | O(log n) | O(n)      |
 
 El peor caso puede ocurrir si el árbol queda muy desbalanceado.
 
----
 
-## 12. AVL
+14. AVL
 
 El AVL es un árbol binario de búsqueda auto-balanceado.
 
@@ -348,14 +348,12 @@ Operaciones evaluadas:
 Complejidades esperadas:
 
 | Operación | Complejidad |
-| --------- | ----------- |
 | Inserción | O(log n)    |
 | Búsqueda  | O(log n)    |
 | Borrado   | O(log n)    |
 
----
 
-## 13. Splay
+15. Splay
 
 El árbol Splay es un árbol binario de búsqueda autoajustable.
 
@@ -370,14 +368,12 @@ Operaciones evaluadas:
 Complejidades esperadas:
 
 | Operación | Complejidad amortizada |
-| --------- | ---------------------- |
-| Inserción | O(log n)               |
-| Búsqueda  | O(log n)               |
-| Borrado   | O(log n)               |
+| Inserción | O(log n) amortizado    |
+| Búsqueda  | O(log n) amortizado    |
+| Borrado   | O(log n) amortizado    |
 
----
 
-## 14. Red-Black
+16. Red-Black
 
 El árbol Red-Black es un árbol binario de búsqueda balanceado mediante colores.
 
@@ -390,27 +386,24 @@ En este proyecto, Red-Black se usa únicamente para:
 
 No se mide el borrado en Red-Black.
 
-Por eso, en los resultados de borrado debe aparecer:
+Por eso, en los resultados de borrado aparece:
 N/A
-
 
 Esto significa que la operación no aplica para esta estructura dentro del alcance del proyecto.
 
 Complejidades esperadas:
 
 | Operación | Complejidad |
-| --------- | ----------- |
 | Inserción | O(log n)    |
 | Búsqueda  | O(log n)    |
 | Borrado   | N/A         |
 
----
 
-## 15. Resultados mostrados
+17. Resultados mostrados
 
 La aplicación muestra una tabla comparativa con los resultados de cada estructura.
 
-La tabla debe incluir:
+La tabla incluye:
 
 * Nombre de la estructura.
 * Tiempo de inserción.
@@ -423,55 +416,67 @@ La tabla debe incluir:
 * Comparaciones de borrado.
 * Complejidad teórica de borrado.
 * Altura en estructuras de árbol.
-* Tamaño en estructuras lineales.
+* Tamaño de la estructura.
 
-En Red-Black, las columnas relacionadas con borrado deben mostrar `N/A`.
-
----
-
-## 16. Exportación CSV
-
-La aplicación permite exportar los resultados de la última corrida a un archivo CSV.
-
-El CSV debe guardar la misma información que aparece en la tabla comparativa.
-
-Formato sugerido del CSV:
-
-Estructura,InsertTime,InsertComparisons,InsertO,SearchTime,SearchComparisons,SearchO,DeleteTime,DeleteComparisons,DeleteO,Height,Size,N,Seed,W,R
-Array,1000,500,O(1),2000,1000,O(n),1500,700,O(n),N/A,1000,1000,42,1,3
-SimpleLinkedList,2000,1200,O(n),3000,1500,O(n),2500,1400,O(n),N/A,1000,1000,42,1,3
-BST,900,700,O(log n),800,600,O(log n),950,650,O(log n),15,N/A,1000,42,1,3
-AVL,1000,800,O(log n),750,550,O(log n),1000,700,O(log n),10,N/A,1000,42,1,3
-Splay,1100,850,O(log n),700,500,O(log n),1050,750,O(log n),12,N/A,1000,42,1,3
-RedBlack,950,750,O(log n),720,530,O(log n),N/A,N/A,N/A,11,N/A,1000,42,1,3
+En Red-Black, las columnas relacionadas con borrado muestran `N/A`.
 
 
-Los valores anteriores son solo un ejemplo del formato.
-Los valores reales dependen de cada corrida.
+18. Exportación CSV
 
----
+La aplicación permite exportar los resultados de la última corrida a un archivo CSV mediante el botón:
+Exportar CSV
 
-## 17. Flujo general del benchmark
+El botón se activa después de ejecutar el benchmark.
 
-El benchmark sigue este proceso:
+El CSV generado incluye:
 
-1. Se leen los parámetros ingresados por el usuario.
-2. Se genera la secuencia de inserción usando `N` y la semilla.
-3. Se generan o cargan las búsquedas.
-4. Se ejecutan las corridas de calentamiento `W`.
-5. Se ejecutan las corridas medidas `R`.
-6. En cada corrida se insertan los mismos datos en cada estructura activa.
-7. Luego se realizan las mismas búsquedas en cada estructura activa.
-8. Después se ejecuta el borrado en las estructuras que lo permiten.
-9. En Red-Black no se ejecuta borrado medido.
-10. Se promedian los resultados.
-11. Se muestran los resultados en la tabla.
-12. Se generan los gráficos.
-13. Se puede exportar el resultado a CSV.
+* Nombre de la estructura.
+* Tiempo de inserción.
+* Tiempo de búsqueda.
+* Tiempo de borrado.
+* Comparaciones de inserción.
+* Comparaciones de búsqueda.
+* Comparaciones de borrado.
+* Complejidad teórica de inserción.
+* Complejidad teórica de búsqueda.
+* Complejidad teórica de borrado.
+* Altura.
+* Tamaño.
+* N.
+* Semilla.
+* W.
+* R.
+* Cantidad de búsquedas usadas.
 
----
+Formato del CSV:
+Estructura,InsertTime(ns),SearchTime(ns),DeleteTime(ns),InsertComp,SearchComp,DeleteComp,InsertO,SearchO,DeleteO,Height,Size,N,Seed,W,R,Queries
+BST,456590,37170,63870,11492,6780,10668,"O(n) peor, O(log n) promedio","O(n) peor, O(log n) promedio","O(n) peor, O(log n) promedio",23,938,1000,42,30,10,500
+AVL,341010,37070,87440,8592,4982,8424,O(log n),O(log n),O(log n),12,938,1000,42,30,10,500
+Red-Black,284190,22850,N/A,8641,5008,N/A,O(log n),O(log n),N/A,12,938,1000,42,30,10,500
 
-## 18. Consideraciones importantes
+Los valores anteriores son solo un ejemplo. Los valores reales dependen de cada corrida.
+
+En Red-Black, las columnas relacionadas con borrado muestran `N/A`, porque esa estructura no mide borrado dentro del alcance del proyecto.
+
+
+19. Consideración sobre claves repetidas
+
+El valor `N` representa la cantidad de intentos de inserción generados para cada corrida.
+
+Las claves se generan aleatoriamente usando la semilla. Debido a esto, pueden aparecer claves repetidas.
+
+En las estructuras de árbol, las claves repetidas no se insertan como nodos nuevos. Por esta razón, el tamaño final de los árboles puede ser menor que `N`.
+
+Por ejemplo, si:
+N = 1000
+
+
+puede ocurrir que solo existan 938 claves únicas. En ese caso, los árboles mostrarán tamaño 938.
+
+En cambio, estructuras lineales como el arreglo y la lista simple pueden almacenar valores repetidos, por lo que pueden mostrar tamaño 1000.
+
+
+20. Consideraciones sobre la medición
 
 Los resultados pueden variar entre ejecuciones debido a factores como:
 
