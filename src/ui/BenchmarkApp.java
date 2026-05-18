@@ -7,7 +7,6 @@ import structures.tree.*;
 
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.geometry.Side;
 import javafx.scene.Scene;
 import javafx.scene.chart.*;
@@ -16,8 +15,11 @@ import javafx.scene.layout.*;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
+import javafx.stage.FileChooser;
 
 import java.util.*;
+import java.io.File;
+import java.io.IOException;
 
 public class BenchmarkApp extends Application {
 
@@ -28,6 +30,10 @@ public class BenchmarkApp extends Application {
     private BarChart<String, Number> heightChart;
     private TabPane resultsTabPane;
     private Label statusLabel;
+
+    private Benchmark lastBenchmark;
+    private List<ResultRow> lastResults;
+    private Button exportCsvBtn;
 
     @Override
     public void start(Stage stage) {
@@ -69,7 +75,7 @@ public class BenchmarkApp extends Application {
         CheckBox arrBox = new CheckBox("Arreglo");
         CheckBox listBox = new CheckBox("Lista Simple");
 
-        // Seleccionar todas por defecto
+        // Seleccionar árboles por defecto
         bstBox.setSelected(true);
         avlBox.setSelected(true);
         splayBox.setSelected(true);
@@ -79,24 +85,47 @@ public class BenchmarkApp extends Application {
 
         Button selectAllBtn = new Button("Seleccionar todas");
         selectAllBtn.setOnAction(e -> {
-            bstBox.setSelected(true); avlBox.setSelected(true);
-            splayBox.setSelected(true); rbBox.setSelected(true);
-            arrBox.setSelected(true); listBox.setSelected(true);
+            bstBox.setSelected(true);
+            avlBox.setSelected(true);
+            splayBox.setSelected(true);
+            rbBox.setSelected(true);
+            arrBox.setSelected(true);
+            listBox.setSelected(true);
         });
 
         Button runBtn = new Button("▶  Ejecutar Benchmark");
         runBtn.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; " +
-                        "-fx-background-color: #2196F3; -fx-text-fill: white; " +
-                        "-fx-padding: 10 20; -fx-cursor: hand;");
+                "-fx-background-color: #2196F3; -fx-text-fill: white; " +
+                "-fx-padding: 10 20; -fx-cursor: hand;");
         runBtn.setMaxWidth(Double.MAX_VALUE);
         runBtn.setOnAction(e -> runBenchmark(bstBox, avlBox, splayBox, rbBox, arrBox, listBox));
+
+        exportCsvBtn = new Button("Exportar CSV");
+        exportCsvBtn.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; " +
+                "-fx-background-color: #4CAF50; -fx-text-fill: white; " +
+                "-fx-padding: 8 16; -fx-cursor: hand;");
+        exportCsvBtn.setMaxWidth(Double.MAX_VALUE);
+        exportCsvBtn.setDisable(true);
+        exportCsvBtn.setOnAction(e -> exportLastResults(stage));
 
         statusLabel = new Label("Listo para ejecutar");
         statusLabel.setStyle("-fx-text-fill: #666;");
 
-        VBox sidebar = new VBox(12, titleLabel, new Separator(), params,
-                                new Separator(), structLabel, structuresBox,
-                                selectAllBtn, new Separator(), runBtn, statusLabel);
+        VBox sidebar = new VBox(
+                12,
+                titleLabel,
+                new Separator(),
+                params,
+                new Separator(),
+                structLabel,
+                structuresBox,
+                selectAllBtn,
+                new Separator(),
+                runBtn,
+                exportCsvBtn,
+                statusLabel
+        );
+
         sidebar.setPadding(new Insets(15));
         sidebar.setPrefWidth(260);
         sidebar.setStyle("-fx-background-color: #f5f5f5;");
@@ -141,48 +170,88 @@ public class BenchmarkApp extends Application {
 
         TableColumn<ResultRow, String> nameCol = new TableColumn<>("Estructura");
         nameCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty(c.getValue().name));
+                new javafx.beans.property.SimpleStringProperty(c.getValue().name));
 
         TableColumn<ResultRow, String> insertCol = new TableColumn<>("Insert (ns)");
         insertCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().insertTime)));
+                new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().insertTime)));
 
         TableColumn<ResultRow, String> searchCol = new TableColumn<>("Search (ns)");
         searchCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().searchTime)));
+                new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().searchTime)));
 
         TableColumn<ResultRow, String> deleteCol = new TableColumn<>("Delete (ns)");
-        deleteCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().deleteTime)));
+        deleteCol.setCellValueFactory(c -> {
+            ResultRow r = c.getValue();
+
+            if ("N/A".equals(r.deleteO)) {
+                return new javafx.beans.property.SimpleStringProperty("N/A");
+            }
+
+            return new javafx.beans.property.SimpleStringProperty(formatNumber(r.deleteTime));
+        });
 
         TableColumn<ResultRow, String> iCompCol = new TableColumn<>("Insert Comp");
         iCompCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().insertComp)));
+                new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().insertComp)));
 
         TableColumn<ResultRow, String> sCompCol = new TableColumn<>("Search Comp");
         sCompCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().searchComp)));
+                new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().searchComp)));
 
         TableColumn<ResultRow, String> dCompCol = new TableColumn<>("Delete Comp");
-        dCompCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty(formatNumber(c.getValue().deleteComp)));
+        dCompCol.setCellValueFactory(c -> {
+            ResultRow r = c.getValue();
+
+            if ("N/A".equals(r.deleteO)) {
+                return new javafx.beans.property.SimpleStringProperty("N/A");
+            }
+
+            return new javafx.beans.property.SimpleStringProperty(formatNumber(r.deleteComp));
+        });
+
+        TableColumn<ResultRow, String> insertOCol = new TableColumn<>("Insert O");
+        insertOCol.setCellValueFactory(c ->
+                new javafx.beans.property.SimpleStringProperty(c.getValue().insertO));
+
+        TableColumn<ResultRow, String> searchOCol = new TableColumn<>("Search O");
+        searchOCol.setCellValueFactory(c ->
+                new javafx.beans.property.SimpleStringProperty(c.getValue().searchO));
+
+        TableColumn<ResultRow, String> deleteOCol = new TableColumn<>("Delete O");
+        deleteOCol.setCellValueFactory(c ->
+                new javafx.beans.property.SimpleStringProperty(c.getValue().deleteO));
 
         TableColumn<ResultRow, String> heightCol = new TableColumn<>("Altura");
         heightCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty("" + c.getValue().height));
+                new javafx.beans.property.SimpleStringProperty("" + c.getValue().height));
 
         TableColumn<ResultRow, String> sizeCol = new TableColumn<>("Tamaño");
         sizeCol.setCellValueFactory(c ->
-            new javafx.beans.property.SimpleStringProperty("" + c.getValue().size));
+                new javafx.beans.property.SimpleStringProperty("" + c.getValue().size));
 
-        tv.getColumns().addAll(nameCol, insertCol, searchCol, deleteCol,
-                               iCompCol, sCompCol, dCompCol, heightCol, sizeCol);
+        tv.getColumns().addAll(
+                nameCol,
+                insertCol,
+                searchCol,
+                deleteCol,
+                iCompCol,
+                sCompCol,
+                dCompCol,
+                insertOCol,
+                searchOCol,
+                deleteOCol,
+                heightCol,
+                sizeCol
+        );
+
         return tv;
     }
 
     private BarChart<String, Number> buildBarChart(String title, String xLabel, String yLabel) {
         CategoryAxis xAxis = new CategoryAxis();
         xAxis.setLabel(xLabel);
+
         NumberAxis yAxis = new NumberAxis();
         yAxis.setLabel(yLabel);
 
@@ -190,6 +259,7 @@ public class BenchmarkApp extends Application {
         chart.setTitle(title);
         chart.setAnimated(true);
         chart.setLegendSide(Side.BOTTOM);
+
         return chart;
     }
 
@@ -197,40 +267,56 @@ public class BenchmarkApp extends Application {
     private void updateCharts(List<ResultRow> results) {
         // ── Gráfico de tiempos ──
         timeChart.getData().clear();
+
         XYChart.Series<String, Number> insertTimeSeries = new XYChart.Series<>();
         insertTimeSeries.setName("Insert");
+
         XYChart.Series<String, Number> searchTimeSeries = new XYChart.Series<>();
         searchTimeSeries.setName("Search");
+
         XYChart.Series<String, Number> deleteTimeSeries = new XYChart.Series<>();
         deleteTimeSeries.setName("Delete");
 
         for (ResultRow r : results) {
             insertTimeSeries.getData().add(new XYChart.Data<>(r.name, r.insertTime));
             searchTimeSeries.getData().add(new XYChart.Data<>(r.name, r.searchTime));
-            deleteTimeSeries.getData().add(new XYChart.Data<>(r.name, r.deleteTime));
+
+            if (!"N/A".equals(r.deleteO)) {
+                deleteTimeSeries.getData().add(new XYChart.Data<>(r.name, r.deleteTime));
+            }
         }
+
         timeChart.getData().addAll(insertTimeSeries, searchTimeSeries, deleteTimeSeries);
 
         // ── Gráfico de comparaciones ──
         compChart.getData().clear();
+
         XYChart.Series<String, Number> insertCompSeries = new XYChart.Series<>();
         insertCompSeries.setName("Insert");
+
         XYChart.Series<String, Number> searchCompSeries = new XYChart.Series<>();
         searchCompSeries.setName("Search");
+
         XYChart.Series<String, Number> deleteCompSeries = new XYChart.Series<>();
         deleteCompSeries.setName("Delete");
 
         for (ResultRow r : results) {
             insertCompSeries.getData().add(new XYChart.Data<>(r.name, r.insertComp));
             searchCompSeries.getData().add(new XYChart.Data<>(r.name, r.searchComp));
-            deleteCompSeries.getData().add(new XYChart.Data<>(r.name, r.deleteComp));
+
+            if (!"N/A".equals(r.deleteO)) {
+                deleteCompSeries.getData().add(new XYChart.Data<>(r.name, r.deleteComp));
+            }
         }
+
         compChart.getData().addAll(insertCompSeries, searchCompSeries, deleteCompSeries);
 
         // ── Gráfico de altura/tamaño ──
         heightChart.getData().clear();
+
         XYChart.Series<String, Number> hSeries = new XYChart.Series<>();
         hSeries.setName("Altura");
+
         XYChart.Series<String, Number> sSeries = new XYChart.Series<>();
         sSeries.setName("Tamaño");
 
@@ -238,13 +324,17 @@ public class BenchmarkApp extends Application {
             hSeries.getData().add(new XYChart.Data<>(r.name, r.height));
             sSeries.getData().add(new XYChart.Data<>(r.name, r.size));
         }
+
         heightChart.getData().addAll(hSeries, sSeries);
     }
 
     private void runBenchmark(CheckBox bstBox, CheckBox avlBox, CheckBox splayBox,
                               CheckBox rbBox, CheckBox arrBox, CheckBox listBox) {
-        int N, W, R;
+        int N;
+        int W;
+        int R;
         long seed;
+
         try {
             N = Integer.parseInt(nField.getText().trim());
             seed = Long.parseLong(seedField.getText().trim());
@@ -256,7 +346,26 @@ public class BenchmarkApp extends Application {
             return;
         }
 
+        if (N <= 0) {
+            statusLabel.setText("Error: N debe ser mayor que 0");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
+
+        if (W < 0) {
+            statusLabel.setText("Error: W debe ser mayor o igual que 0");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
+
+        if (R < 1) {
+            statusLabel.setText("Error: R debe ser mayor o igual que 1");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
+
         List<DataStructure> active = new ArrayList<>();
+
         if (bstBox.isSelected()) active.add(new BST());
         if (avlBox.isSelected()) active.add(new AVL());
         if (splayBox.isSelected()) active.add(new Splay());
@@ -276,6 +385,10 @@ public class BenchmarkApp extends Application {
         Benchmark bm = new Benchmark(N, seed, W, R);
         List<ResultRow> results = bm.run(active);
 
+        lastBenchmark = bm;
+        lastResults = results;
+        exportCsvBtn.setDisable(false);
+
         // Actualizar tabla y gráficos
         table.getItems().setAll(results);
         updateCharts(results);
@@ -285,6 +398,41 @@ public class BenchmarkApp extends Application {
 
         // Saltar al tab de tiempos automáticamente
         resultsTabPane.getSelectionModel().select(1);
+    }
+
+    private void exportLastResults(Stage stage) {
+        if (lastBenchmark == null || lastResults == null || lastResults.isEmpty()) {
+            statusLabel.setText("No hay resultados para exportar");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            return;
+        }
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Guardar resultados CSV");
+
+        fileChooser.getExtensionFilters().add(
+                new FileChooser.ExtensionFilter("Archivo CSV", "*.csv")
+        );
+
+        fileChooser.setInitialFileName("resultados_benchmark.csv");
+
+        File file = fileChooser.showSaveDialog(stage);
+
+        if (file == null) {
+            statusLabel.setText("Exportación cancelada");
+            statusLabel.setStyle("-fx-text-fill: #666;");
+            return;
+        }
+
+        try {
+            lastBenchmark.exportCSV(lastResults, file.getAbsolutePath());
+            statusLabel.setText("CSV exportado correctamente");
+            statusLabel.setStyle("-fx-text-fill: green;");
+        } catch (IOException ex) {
+            statusLabel.setText("Error al exportar CSV");
+            statusLabel.setStyle("-fx-text-fill: red;");
+            ex.printStackTrace();
+        }
     }
 
     private String formatNumber(long n) {
