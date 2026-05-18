@@ -26,20 +26,34 @@ public class Benchmark {
         generateQueries();
     }
 
+    public Benchmark(int N, long seed, int W, int R, int[] manualQueries) {
+        this.N = N;
+        this.seed = seed;
+        this.W = W;
+        this.R = R;
+        generateKeys();
+
+        if (manualQueries == null || manualQueries.length == 0) {
+            generateQueries();
+        } else {
+            this.queries = manualQueries;
+        }
+    }
+
     /** Genera secuencia reproducible de inserción */
     private void generateKeys() {
         Random rand = new Random(seed);
         keys = new int[N];
 
         for (int i = 0; i < N; i++) {
-            keys[i] = rand.nextInt(N * 10); // rango amplio
+            keys[i] = rand.nextInt(N * 10);
         }
     }
 
     /** Genera lote de búsquedas automáticas */
     private void generateQueries() {
         Random rand = new Random(seed + 1);
-        queries = new int[N / 2]; // mitad de N como ejemplo
+        queries = new int[N / 2];
 
         for (int i = 0; i < queries.length; i++) {
             queries[i] = rand.nextInt(N * 10);
@@ -52,13 +66,12 @@ public class Benchmark {
 
         for (DataStructure ds : structures) {
 
-            // Warmup: corridas completas que no se cuentan en la tabla final.
+            // Warmup: corridas completas que no se cuentan.
             for (int w = 0; w < W; w++) {
                 ds.clear();
                 runOnce(ds);
             }
 
-            // Iteraciones medidas.
             long totalInsertTime = 0;
             long totalSearchTime = 0;
             long totalDeleteTime = 0;
@@ -187,11 +200,12 @@ public class Benchmark {
                     + "N,"
                     + "Seed,"
                     + "W,"
-                    + "R"
+                    + "R,"
+                    + "Queries"
             );
 
             for (ResultRow r : results) {
-                pw.println(r.toCSV(N, seed, W, R));
+                pw.println(r.toCSV(N, seed, W, R, queries.length));
             }
         }
     }
@@ -237,7 +251,7 @@ public class Benchmark {
             this.size = s;
         }
 
-        public String toCSV(int N, long seed, int W, int R) {
+        public String toCSV(int N, long seed, int W, int R, int queryCount) {
             String deleteTimeValue;
             String deleteCompValue;
 
@@ -250,7 +264,7 @@ public class Benchmark {
             }
 
             return String.format(
-                    "%s,%d,%d,%s,%d,%d,%s,%s,%s,%s,%d,%d,%d,%d,%d,%d",
+                    "%s,%d,%d,%s,%d,%d,%s,%s,%s,%s,%d,%d,%d,%d,%d,%d,%d",
                     name,
                     insertTime,
                     searchTime,
@@ -266,7 +280,8 @@ public class Benchmark {
                     N,
                     seed,
                     W,
-                    R
+                    R,
+                    queryCount
             );
         }
 

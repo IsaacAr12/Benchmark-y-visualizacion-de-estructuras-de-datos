@@ -24,6 +24,9 @@ import java.io.IOException;
 public class BenchmarkApp extends Application {
 
     private TextField nField, seedField, wField, rField;
+    private ComboBox<String> searchModeBox;
+    private TextArea manualQueriesArea;
+
     private TableView<ResultRow> table;
     private BarChart<String, Number> timeChart;
     private BarChart<String, Number> compChart;
@@ -39,7 +42,6 @@ public class BenchmarkApp extends Application {
     public void start(Stage stage) {
         stage.setTitle("Benchmark de Estructuras de Datos");
 
-        // ── Panel izquierdo: parámetros + estructuras ──
         Label titleLabel = new Label("Configuración");
         titleLabel.setFont(Font.font("System", FontWeight.BOLD, 16));
 
@@ -51,12 +53,16 @@ public class BenchmarkApp extends Application {
         GridPane params = new GridPane();
         params.setHgap(10);
         params.setVgap(8);
+
         params.add(new Label("N (elementos):"), 0, 0);
         params.add(nField, 1, 0);
+
         params.add(new Label("Semilla:"), 0, 1);
         params.add(seedField, 1, 1);
+
         params.add(new Label("Warmup (W):"), 0, 2);
         params.add(wField, 1, 2);
+
         params.add(new Label("Iteraciones (R):"), 0, 3);
         params.add(rField, 1, 3);
 
@@ -64,6 +70,25 @@ public class BenchmarkApp extends Application {
         seedField.setPrefWidth(120);
         wField.setPrefWidth(120);
         rField.setPrefWidth(120);
+
+        Label searchLabel = new Label("Búsquedas");
+        searchLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
+
+        searchModeBox = new ComboBox<>();
+        searchModeBox.getItems().addAll("Automática", "Manual");
+        searchModeBox.setValue("Automática");
+        searchModeBox.setMaxWidth(Double.MAX_VALUE);
+
+        manualQueriesArea = new TextArea();
+        manualQueriesArea.setPromptText("Ejemplo: 10, 25, 80, 150\nTambién puede ser una clave por línea.");
+        manualQueriesArea.setPrefRowCount(4);
+        manualQueriesArea.setWrapText(true);
+        manualQueriesArea.setDisable(true);
+
+        searchModeBox.setOnAction(e -> {
+            boolean manual = "Manual".equals(searchModeBox.getValue());
+            manualQueriesArea.setDisable(!manual);
+        });
 
         Label structLabel = new Label("Estructuras");
         structLabel.setFont(Font.font("System", FontWeight.BOLD, 14));
@@ -75,7 +100,6 @@ public class BenchmarkApp extends Application {
         CheckBox arrBox = new CheckBox("Arreglo");
         CheckBox listBox = new CheckBox("Lista Simple");
 
-        // Seleccionar árboles por defecto
         bstBox.setSelected(true);
         avlBox.setSelected(true);
         splayBox.setSelected(true);
@@ -94,16 +118,16 @@ public class BenchmarkApp extends Application {
         });
 
         Button runBtn = new Button("▶  Ejecutar Benchmark");
-        runBtn.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; " +
-                "-fx-background-color: #2196F3; -fx-text-fill: white; " +
-                "-fx-padding: 10 20; -fx-cursor: hand;");
+        runBtn.setStyle("-fx-font-size: 14px; -fx-font-weight: bold; "
+                + "-fx-background-color: #2196F3; -fx-text-fill: white; "
+                + "-fx-padding: 10 20; -fx-cursor: hand;");
         runBtn.setMaxWidth(Double.MAX_VALUE);
         runBtn.setOnAction(e -> runBenchmark(bstBox, avlBox, splayBox, rbBox, arrBox, listBox));
 
         exportCsvBtn = new Button("Exportar CSV");
-        exportCsvBtn.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; " +
-                "-fx-background-color: #4CAF50; -fx-text-fill: white; " +
-                "-fx-padding: 8 16; -fx-cursor: hand;");
+        exportCsvBtn.setStyle("-fx-font-size: 13px; -fx-font-weight: bold; "
+                + "-fx-background-color: #4CAF50; -fx-text-fill: white; "
+                + "-fx-padding: 8 16; -fx-cursor: hand;");
         exportCsvBtn.setMaxWidth(Double.MAX_VALUE);
         exportCsvBtn.setDisable(true);
         exportCsvBtn.setOnAction(e -> exportLastResults(stage));
@@ -117,6 +141,11 @@ public class BenchmarkApp extends Application {
                 new Separator(),
                 params,
                 new Separator(),
+                searchLabel,
+                new Label("Modo de búsqueda:"),
+                searchModeBox,
+                manualQueriesArea,
+                new Separator(),
                 structLabel,
                 structuresBox,
                 selectAllBtn,
@@ -127,38 +156,32 @@ public class BenchmarkApp extends Application {
         );
 
         sidebar.setPadding(new Insets(15));
-        sidebar.setPrefWidth(260);
+        sidebar.setPrefWidth(290);
         sidebar.setStyle("-fx-background-color: #f5f5f5;");
 
-        // ── Panel derecho: resultados con tabs ──
         resultsTabPane = new TabPane();
         resultsTabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         resultsTabPane.setSide(Side.TOP);
 
-        // Tab 1: Tabla
         table = buildTable();
         Tab tableTab = new Tab("Tabla", table);
 
-        // Tab 2: Gráfico de tiempos
         timeChart = buildBarChart("Tiempo promedio por operación", "Estructura", "Tiempo (ns)");
         Tab timeTab = new Tab("Tiempos", timeChart);
 
-        // Tab 3: Gráfico de comparaciones
         compChart = buildBarChart("Comparaciones promedio por operación", "Estructura", "Comparaciones");
         Tab compTab = new Tab("Comparaciones", compChart);
 
-        // Tab 4: Altura y tamaño
         heightChart = buildBarChart("Altura y tamaño final", "Estructura", "Valor");
         Tab heightTab = new Tab("Altura / Tamaño", heightChart);
 
         resultsTabPane.getTabs().addAll(tableTab, timeTab, compTab, heightTab);
 
-        // ── Layout principal ──
         BorderPane root = new BorderPane();
         root.setLeft(sidebar);
         root.setCenter(resultsTabPane);
 
-        Scene scene = new Scene(root, 1100, 700);
+        Scene scene = new Scene(root, 1150, 720);
         stage.setScene(scene);
         stage.show();
     }
@@ -265,7 +288,6 @@ public class BenchmarkApp extends Application {
 
     @SuppressWarnings("unchecked")
     private void updateCharts(List<ResultRow> results) {
-        // ── Gráfico de tiempos ──
         timeChart.getData().clear();
 
         XYChart.Series<String, Number> insertTimeSeries = new XYChart.Series<>();
@@ -288,7 +310,6 @@ public class BenchmarkApp extends Application {
 
         timeChart.getData().addAll(insertTimeSeries, searchTimeSeries, deleteTimeSeries);
 
-        // ── Gráfico de comparaciones ──
         compChart.getData().clear();
 
         XYChart.Series<String, Number> insertCompSeries = new XYChart.Series<>();
@@ -311,7 +332,6 @@ public class BenchmarkApp extends Application {
 
         compChart.getData().addAll(insertCompSeries, searchCompSeries, deleteCompSeries);
 
-        // ── Gráfico de altura/tamaño ──
         heightChart.getData().clear();
 
         XYChart.Series<String, Number> hSeries = new XYChart.Series<>();
@@ -364,6 +384,18 @@ public class BenchmarkApp extends Application {
             return;
         }
 
+        int[] manualQueries = null;
+
+        if ("Manual".equals(searchModeBox.getValue())) {
+            try {
+                manualQueries = parseManualQueries(manualQueriesArea.getText());
+            } catch (IllegalArgumentException ex) {
+                statusLabel.setText(ex.getMessage());
+                statusLabel.setStyle("-fx-text-fill: red;");
+                return;
+            }
+        }
+
         List<DataStructure> active = new ArrayList<>();
 
         if (bstBox.isSelected()) active.add(new BST());
@@ -382,22 +414,65 @@ public class BenchmarkApp extends Application {
         statusLabel.setText("Ejecutando benchmark...");
         statusLabel.setStyle("-fx-text-fill: #2196F3;");
 
-        Benchmark bm = new Benchmark(N, seed, W, R);
+        Benchmark bm;
+
+        if ("Manual".equals(searchModeBox.getValue())) {
+            bm = new Benchmark(N, seed, W, R, manualQueries);
+        } else {
+            bm = new Benchmark(N, seed, W, R);
+        }
+
         List<ResultRow> results = bm.run(active);
 
         lastBenchmark = bm;
         lastResults = results;
         exportCsvBtn.setDisable(false);
 
-        // Actualizar tabla y gráficos
         table.getItems().setAll(results);
         updateCharts(results);
 
-        statusLabel.setText("Completado — " + results.size() + " estructura(s)");
-        statusLabel.setStyle("-fx-text-fill: green;");
+        if ("Manual".equals(searchModeBox.getValue())) {
+            statusLabel.setText("Completado — modo manual con " + manualQueries.length + " búsqueda(s)");
+        } else {
+            statusLabel.setText("Completado — modo automático");
+        }
 
-        // Saltar al tab de tiempos automáticamente
+        statusLabel.setStyle("-fx-text-fill: green;");
         resultsTabPane.getSelectionModel().select(1);
+    }
+
+    private int[] parseManualQueries(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            throw new IllegalArgumentException("Error: escribí al menos una clave manual");
+        }
+
+        String normalized = text.trim();
+
+        normalized = normalized.replace(",", " ");
+        normalized = normalized.replace(";", " ");
+        normalized = normalized.replace("\n", " ");
+        normalized = normalized.replace("\r", " ");
+        normalized = normalized.replace("\t", " ");
+
+        String[] parts = normalized.trim().split("\\s+");
+
+        List<Integer> values = new ArrayList<>();
+
+        for (String part : parts) {
+            try {
+                values.add(Integer.parseInt(part));
+            } catch (NumberFormatException ex) {
+                throw new IllegalArgumentException("Error: la clave manual '" + part + "' no es un número entero");
+            }
+        }
+
+        int[] result = new int[values.size()];
+
+        for (int i = 0; i < values.size(); i++) {
+            result[i] = values.get(i);
+        }
+
+        return result;
     }
 
     private void exportLastResults(Stage stage) {
