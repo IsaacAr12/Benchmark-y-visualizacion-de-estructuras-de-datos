@@ -361,19 +361,14 @@ public class BenchmarkApp extends Application {
         stepTextArea.setFont(Font.font("Monospaced", 13));
 
         stepCanvas = new Canvas(700, 350);
-        Group stepGroup = new Group(stepCanvas);
         Slider stepZoom = new Slider(0.3, 3.0, 1.0);
         stepZoom.setPrefWidth(120);
         Button stepZoomReset = new Button("100%");
         stepZoomReset.setOnAction(e -> stepZoom.setValue(1.0));
-        stepZoom.valueProperty().addListener((obs, o, nv) -> {
-            double z = nv.doubleValue();
-            stepGroup.setScaleX(z); stepGroup.setScaleY(z);
-        });
         HBox stepZoomBox = new HBox(8, new Label("Zoom:"), stepZoom, stepZoomReset);
         stepZoomBox.setAlignment(Pos.CENTER_LEFT);
 
-        ScrollPane stepScrollPane = buildZoomableScroll(stepGroup, stepZoom);
+        ScrollPane stepScrollPane = buildZoomableScroll(stepCanvas, stepZoom);
         VBox.setVgrow(stepScrollPane, Priority.ALWAYS);
 
         VBox pane = new VBox(12, header, controls, new Separator(), navBox, stepZoomBox, stepTextArea, stepScrollPane);
@@ -490,19 +485,9 @@ public class BenchmarkApp extends Application {
         canvas1 = new Canvas(400, 300);
         canvas2 = new Canvas(400, 300);
 
-        Group group1 = new Group(canvas1);
-        Group group2 = new Group(canvas2);
-
-        // Aplicar zoom a ambos grupos
-        zoomSlider.valueProperty().addListener((obs, oldVal, newVal) -> {
-            double z = newVal.doubleValue();
-            group1.setScaleX(z); group1.setScaleY(z);
-            group2.setScaleX(z); group2.setScaleY(z);
-        });
-
-        // ScrollPane para cada árbol
-        ScrollPane scroll1 = buildZoomableScroll(group1, zoomSlider);
-        ScrollPane scroll2 = buildZoomableScroll(group2, zoomSlider);
+        // ScrollPane con zoom para cada árbol
+        ScrollPane scroll1 = buildZoomableScroll(canvas1, zoomSlider);
+        ScrollPane scroll2 = buildZoomableScroll(canvas2, zoomSlider);
 
         VBox box1 = new VBox(5, treeLabel1, scroll1);
         VBox box2 = new VBox(5, treeLabel2, scroll2);
@@ -521,20 +506,47 @@ public class BenchmarkApp extends Application {
         return pane;
     }
 
-    /** Crea un ScrollPane con zoom por rueda del mouse (Ctrl+scroll). */
-    private ScrollPane buildZoomableScroll(Group group, Slider zoomSlider) {
-        ScrollPane sp = new ScrollPane(group);
+    /**
+     * Crea un ScrollPane con zoom funcional: barras de scroll aparecen al hacer zoom,
+     * y se puede arrastrar o usar Ctrl+scroll para navegar el árbol ampliado.
+     */
+    private ScrollPane buildZoomableScroll(Canvas canvas, Slider zoomSlider) {
+        Group group = new Group(canvas);
+
+        // Scale con pivote en (0,0) para que crezca desde la esquina superior izquierda
+        javafx.scene.transform.Scale scaleT = new javafx.scene.transform.Scale(1, 1, 0, 0);
+        group.getTransforms().add(scaleT);
+
+        // Contenedor que reporta el tamaño escalado al ScrollPane
+        StackPane container = new StackPane(group);
+        container.setAlignment(Pos.TOP_LEFT);
+
+        // Actualizar escala y tamaño del contenedor cuando cambia el zoom
+        Runnable updateSize = () -> {
+            double z = zoomSlider.getValue();
+            scaleT.setX(z);
+            scaleT.setY(z);
+            container.setMinWidth(canvas.getWidth() * z);
+            container.setMinHeight(canvas.getHeight() * z);
+            container.setPrefWidth(canvas.getWidth() * z);
+            container.setPrefHeight(canvas.getHeight() * z);
+        };
+
+        zoomSlider.valueProperty().addListener((obs, o, n) -> updateSize.run());
+        canvas.widthProperty().addListener((obs, o, n) -> updateSize.run());
+        canvas.heightProperty().addListener((obs, o, n) -> updateSize.run());
+
+        ScrollPane sp = new ScrollPane(container);
         sp.setPannable(true);
         sp.setStyle("-fx-background-color: white;");
-        sp.setFitToWidth(false);
-        sp.setFitToHeight(false);
 
+        // Ctrl + rueda del mouse para zoom
         sp.addEventFilter(javafx.scene.input.ScrollEvent.SCROLL, event -> {
             if (event.isControlDown()) {
                 event.consume();
                 double delta = event.getDeltaY() > 0 ? 0.1 : -0.1;
-                double newZoom = Math.max(0.3, Math.min(3.0, zoomSlider.getValue() + delta));
-                zoomSlider.setValue(newZoom);
+                double nz = Math.max(0.3, Math.min(3.0, zoomSlider.getValue() + delta));
+                zoomSlider.setValue(nz);
             }
         });
 
